@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Business Calculator{% endblock %}
+{% block content %}
+    <h1>Business 3D Print Calculator</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="mode" value="business">
+        <label for="filament">Filament Type:</label>
+        <select name="filament" id="filament">
+            {% for filament in filaments %}
+                <option value="{{ filament }}">{{ filament }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label for="file">Upload your 3D model:</label>
+        <input type="file" name="file" id="file">
+        <input type="submit" value="Upload and Generate Invoice">
+    </form>
+{% endblock %}

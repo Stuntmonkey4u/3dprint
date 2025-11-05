@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <h1>Welcome to the 3D Print Calculator</h1>
+    <p>Choose your mode:</p>
+    <ul>
+        <li><a href="{{ url_for('consumer') }}">Consumer</a></li>
+        <li><a href="{{ url_for('business') }}">Business</a></li>
+    </ul>
+{% endblock %}

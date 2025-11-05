@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Invoice{% endblock %}
+{% block content %}
+    <div class="invoice-box">
+        <table>
+            <tr class="top">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td class="title">
+                                {{ company.name }}
+                            </td>
+                            <td>
+                                Invoice #: 123<br>
+                                Created: {{ date }}<br>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr class="information">
+                <td colspan="2">
+                    <table>
+                        <tr>
+                            <td>
+                                Billed To:<br>
+                                John Doe<br>
+                                john.doe@example.com
+                            </td>
+                            <td>
+                                {{ company.name }}<br>
+                                {{ company.address }}<br>
+                                {{ company.city_state_zip }}
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr class="heading">
+                <td>
+                    Description
+                </td>
+                <td>
+                    Cost
+                </td>
+            </tr>
+            <tr class="item">
+                <td>
+                    3D Model ({{ filename }})
+                </td>
+                <td>
+                    ${{ "%.2f"|format(material_cost) }}
+                </td>
+            </tr>
+            <tr class="item">
+                <td>
+                    Labor
+                </td>
+                <td>
+                    ${{ "%.2f"|format(labor_cost) }}
+                </td>
+            </tr>
+            <tr class="item">
+                <td>
+                    Machine Maintenance
+                </td>
+                <td>
+                    ${{ "%.2f"|format(maintenance_cost) }}
+                </td>
+            </tr>
+            <tr class="item last">
+                <td>
+                    Energy
+                </td>
+                <td>
+                    ${{ "%.2f"|format(energy_cost) }}
+                </td>
+            </tr>
+            <tr class="total">
+                <td></td>
+                <td>
+                   Total: ${{ "%.2f"|format(total_cost) }}
+                </td>
+            </tr>
+        </table>
+    </div>
+{% endblock %}
