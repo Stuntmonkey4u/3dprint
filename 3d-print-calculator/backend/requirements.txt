@@ -1,0 +1,4 @@
+Flask
+gcodeparser
+numpy-stl
+Flask-Talisman
