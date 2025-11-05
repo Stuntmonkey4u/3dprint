@@ -26,6 +26,10 @@ COPY 3d-print-calculator/backend/ ./backend/
 # Copy built React app
 COPY --from=build-react /app/frontend/build ./backend/static
 
+RUN mkdir /data && chown app:app /data
+COPY 3d-print-calculator/backend/init_db.py ./backend/
+RUN python backend/init_db.py
+
 # Switch to non-root user
 USER app
 

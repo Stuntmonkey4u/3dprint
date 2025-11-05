@@ -18,7 +18,7 @@ The purpose of this tool is to allow users (consumers or businesses) to upload a
 
 *   Docker installed on your machine.
 
-### Building and Running the Application
+### Building and Running the Application (with Docker Compose)
 
 1.  **Clone the repository:**
     ```bash
@@ -26,18 +26,17 @@ The purpose of this tool is to allow users (consumers or businesses) to upload a
     cd 3d-print-calculator
     ```
 
-2.  **Build the Docker image:**
-    ```bash
-    docker build -t 3d-print-calculator .
-    ```
+2.  **Configure Admin Credentials:**
+    Open the `docker-compose.yml` file and change the `ADMIN_USER` and `ADMIN_PASS` environment variables to your desired credentials.
 
-3.  **Run the Docker container:**
+3.  **Run the application:**
     ```bash
-    docker run -d -p 5000:5000 3d-print-calculator
+    docker-compose up --build
     ```
 
 4.  **Access the application:**
     Open your web browser and navigate to `http://localhost:5000`.
+    The admin panel is available at `http://localhost:5000/admin`.
 
 ## Features (Phase 1 - MVP)
 

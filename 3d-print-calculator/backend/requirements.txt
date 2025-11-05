@@ -2,3 +2,5 @@ Flask
 gcodeparser
 numpy-stl
 Flask-Talisman
+Flask-SQLAlchemy
+reportlab
