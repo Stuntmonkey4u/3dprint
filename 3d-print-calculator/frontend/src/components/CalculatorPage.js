@@ -1,4 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
+import { Pie } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Container, Grid, Card, CardContent, Typography, Button, Select, MenuItem, Checkbox, FormControlLabel, TextField, Box } from '@mui/material';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function CalculatorPage() {
     const [file, setFile] = useState(null);
@@ -27,12 +33,13 @@ function CalculatorPage() {
         }
     };
 
-    const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-    };
+    const onDrop = useCallback(acceptedFiles => {
+        setFile(acceptedFiles[0]);
+    }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const { getRootProps, getInputProps } = useDropzone({ onDrop });
+
+    const handleSubmit = async () => {
         if (!file) {
             setError('Please select a file.');
             return;
@@ -46,30 +53,24 @@ function CalculatorPage() {
         formData.append('file', file);
 
         try {
-            const uploadResponse = await fetch('/upload', {
-                method: 'POST',
-                body: formData,
-            });
-
+            const uploadResponse = await fetch('/upload', { method: 'POST', body: formData });
             if (!uploadResponse.ok) throw new Error('File upload failed.');
             const uploadData = await uploadResponse.json();
 
-            const calculationPayload = {
+            const payload = {
                 ...uploadData,
                 filament_id: selectedFilamentId,
                 calculate_energy_cost: calculateEnergyCost,
                 printer_wattage: calculateEnergyCost ? parseInt(printerWattage) : null,
             };
 
-            const calculateResponse = await fetch('/calculate', {
+            const calcResponse = await fetch('/calculate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(calculationPayload),
+                body: JSON.stringify(payload),
             });
-
-            if (!calculateResponse.ok) throw new Error('Calculation failed.');
-            const resultData = await calculateResponse.json();
-            setResult(resultData);
+            if (!calcResponse.ok) throw new Error('Calculation failed.');
+            setResult(await calcResponse.json());
         } catch (err) {
             setError(err.message);
         } finally {
@@ -77,74 +78,76 @@ function CalculatorPage() {
         }
     };
 
+    const pieData = result ? {
+        labels: ['Material', 'Energy', 'Labor', 'Maintenance', 'Markup'],
+        datasets: [{
+            data: [result.material_cost, result.energy_cost, result.labor_cost, result.maintenance_cost, result.markup].filter(v => v > 0),
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
+        }],
+    } : {};
+
     const handleDownloadInvoice = async () => {
-        const response = await fetch('/api/invoice', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result),
-        });
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'invoice.pdf';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        if (!result) return;
+        try {
+            const response = await fetch('/api/invoice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(result),
+            });
+            if (!response.ok) throw new Error('Invoice generation failed.');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'invoice.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+        } catch (err) {
+            setError(err.message);
+        }
     };
 
     return (
-        <div className="App">
-            <header className="App-header">
-                <h1>3D Print Cost Calculator</h1>
-            </header>
-            <main>
-                <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Upload .gcode or .stl file</label>
-                        <input type="file" onChange={handleFileChange} accept=".gcode,.stl" />
-                    </div>
-                    <div className="form-group">
-                        <label>Filament Type</label>
-                        <select value={selectedFilamentId} onChange={(e) => setSelectedFilamentId(e.target.value)}>
-                            {filaments.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>
-                            <input type="checkbox" checked={calculateEnergyCost} onChange={(e) => setCalculateEnergyCost(e.target.checked)} />
-                            Calculate Energy Cost
-                        </label>
-                    </div>
-                    {calculateEnergyCost && (
-                        <div className="form-group">
-                            <label>Printer Wattage (W)</label>
-                            <input type="number" value={printerWattage} onChange={(e) => setPrinterWattage(e.target.value)} required />
-                        </div>
-                    )}
-                    <button type="submit" disabled={uploading}>{uploading ? 'Calculating...' : 'Calculate Cost'}</button>
-                </form>
-                {error && <div className="error">{error}</div>}
-                {result && (
-                    <div className="result">
-                        <h2>Cost Estimate</h2>
-                        <p>Material Cost: ${result.material_cost.toFixed(2)}</p>
-                        <p>Energy Cost: ${result.energy_cost.toFixed(2)}</p>
-                        {result.mode === 'business' && (
-                            <>
-                                <p>Labor Cost: ${result.labor_cost.toFixed(2)}</p>
-                                <p>Maintenance Cost: ${result.maintenance_cost.toFixed(2)}</p>
-                                <p>Markup: ${result.markup.toFixed(2)}</p>
-                            </>
-                        )}
-                        <h3>Total Cost: ${result.total_cost.toFixed(2)}</h3>
-                        {result.mode === 'business' && (
-                            <button onClick={handleDownloadInvoice}>Download Invoice</button>
-                        )}
-                    </div>
-                )}
-            </main>
-        </div>
+        <Container sx={{ py: 4 }}>
+            <Typography variant="h3" component="h1" textAlign="center" gutterBottom>3D Print Cost Calculator</Typography>
+            <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                    <Card><CardContent>
+                        <Typography variant="h5" component="h2" gutterBottom>1. Upload File</Typography>
+                        <Box {...getRootProps()} sx={{ border: '2px dashed grey', p: 4, textAlign: 'center' }}>
+                            <input {...getInputProps()} />
+                            <Typography>Drag 'n' drop a file here, or click to select</Typography>
+                            {file && <Typography sx={{ mt: 2 }}>Selected: {file.name}</Typography>}
+                        </Box>
+                    </CardContent></Card>
+                    <Card sx={{ mt: 4 }}><CardContent>
+                        <Typography variant="h5" component="h2" gutterBottom>2. Configuration</Typography>
+                        <Select fullWidth value={selectedFilamentId} onChange={(e) => setSelectedFilamentId(e.target.value)}>
+                            {filaments.map(f => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+                        </Select>
+                        <FormControlLabel control={<Checkbox checked={calculateEnergyCost} onChange={(e) => setCalculateEnergyCost(e.target.checked)} />} label="Calculate Energy Cost" />
+                        {calculateEnergyCost && <TextField label="Printer Wattage (W)" type="number" value={printerWattage} onChange={(e) => setPrinterWattage(e.target.value)} fullWidth />}
+                        <Button variant="contained" onClick={handleSubmit} disabled={uploading} sx={{ mt: 2 }}>{uploading ? 'Calculating...' : 'Calculate Cost'}</Button>
+                    </CardContent></Card>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                    <Card><CardContent>
+                        <Typography variant="h5" component="h2" gutterBottom>3. Results</Typography>
+                        {error && <Typography color="error">{error}</Typography>}
+                        {result ? (
+                            <Box>
+                                <Box sx={{ height: 300 }}><Pie data={pieData} options={{ maintainAspectRatio: false }} /></Box>
+                                <Typography variant="h6">Total Cost: ${result.total_cost.toFixed(2)}</Typography>
+                                {result.mode === 'business' && <Button variant="contained" color="success" onClick={handleDownloadInvoice} sx={{ mt: 2 }}>Download Invoice</Button>}
+                            </Box>
+                        ) : <Typography>Upload a file and click Calculate to see the results.</Typography>}
+                    </CardContent></Card>
+                </Grid>
+            </Grid>
+        </Container>
     );
 }
 

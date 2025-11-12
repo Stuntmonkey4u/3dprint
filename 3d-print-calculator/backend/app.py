@@ -48,9 +48,11 @@ class AppSettings(db.Model):
     markup_percentage = db.Column(db.Float, default=25.0)
     business_name = db.Column(db.String(200), default='My 3D Printing Business')
     business_address = db.Column(db.String(500), default='')
+    logo_filename = db.Column(db.String(200), nullable=True)
 
     def to_dict(self):
         return {
+            'logo_filename': self.logo_filename,
             'mode': self.mode,
             'energy_cost_kwh': self.energy_cost_kwh,
             'labor_cost_per_hour': self.labor_cost_per_hour,
@@ -242,6 +244,35 @@ def manage_filament(filament_id):
     db.session.commit()
     return jsonify({'message': 'Filament deleted successfully'})
 
+@app.route('/api/admin/logo', methods=['POST'])
+@login_required
+def upload_logo():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+
+    if file:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join('/data/logos', filename))
+
+        settings = AppSettings.query.first()
+        settings.logo_filename = filename
+        db.session.commit()
+
+        return jsonify({'message': 'Logo uploaded successfully'})
+
+@app.route('/api/logo')
+def get_logo():
+    settings = AppSettings.query.first()
+    if settings and settings.logo_filename:
+        return send_from_directory('/data/logos', settings.logo_filename)
+    return '', 404
+
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
 @app.route('/api/invoice', methods=['POST'])
 def generate_invoice():
     data = request.get_json()
@@ -250,20 +281,45 @@ def generate_invoice():
     buffer = io.BytesIO()
     p = canvas.Canvas(buffer, pagesize=letter)
 
-    p.drawString(inch, 10.5 * inch, settings.business_name)
-    p.drawString(inch, 10.25 * inch, settings.business_address)
+    # Draw logo
+    if settings.logo_filename:
+        logo_path = os.path.join('/data/logos', settings.logo_filename)
+        if os.path.exists(logo_path):
+            p.drawImage(logo_path, inch, 9.5 * inch, width=1.5*inch, preserveAspectRatio=True)
 
-    p.drawString(inch, 9 * inch, "Cost Breakdown:")
+    # Business Info
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(4 * inch, 10 * inch, settings.business_name)
+    p.setFont("Helvetica", 12)
+    p.drawString(4 * inch, 9.8 * inch, settings.business_address)
 
-    y = 8.5 * inch
-    p.drawString(inch, y, f"Material Cost: ${data.get('material_cost', 0):.2f}")
-    p.drawString(inch, y - 0.25 * inch, f"Energy Cost: ${data.get('energy_cost', 0):.2f}")
+    # Cost Breakdown Table
+    table_data = [
+        ["Item", "Cost"],
+        ["Material", f"${data.get('material_cost', 0):.2f}"],
+        ["Energy", f"${data.get('energy_cost', 0):.2f}"],
+    ]
     if settings.mode == 'business':
-        p.drawString(inch, y - 0.5 * inch, f"Labor Cost: ${data.get('labor_cost', 0):.2f}")
-        p.drawString(inch, y - 0.75 * inch, f"Maintenance Cost: ${data.get('maintenance_cost', 0):.2f}")
-        p.drawString(inch, y - 1 * inch, f"Markup: ${data.get('markup', 0):.2f}")
+        table_data.extend([
+            ["Labor", f"${data.get('labor_cost', 0):.2f}"],
+            ["Maintenance", f"${data.get('maintenance_cost', 0):.2f}"],
+            ["Markup", f"${data.get('markup', 0):.2f}"],
+        ])
+    table_data.append(["Total", f"${data.get('total_cost', 0):.2f}"])
 
-    p.drawString(inch, y - 1.5 * inch, f"Total Cost: ${data.get('total_cost', 0):.2f}")
+    table = Table(table_data, colWidths=[4*inch, 1.5*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.grey),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0,0), (-1,0), 12),
+        ('BACKGROUND', (0,1), (-1,-1), colors.beige),
+        ('GRID', (0,0), (-1,-1), 1, colors.black)
+    ]))
+
+    table.wrapOn(p, 6*inch, 4*inch)
+    table.drawOn(p, inch, 7*inch)
 
     p.showPage()
     p.save()
@@ -276,6 +332,10 @@ def generate_invoice():
 
 @app.route('/')
 def serve():
+    return send_from_directory(app.static_folder, 'index.html')
+
+@app.errorhandler(404)
+def not_found(e):
     return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':

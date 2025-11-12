@@ -38,10 +38,10 @@ The purpose of this tool is to allow users (consumers or businesses) to upload a
     Open your web browser and navigate to `http://localhost:5000`.
     The admin panel is available at `http://localhost:5000/admin`.
 
-## Features (Phase 1 - MVP)
+## Features (Phase 3 - UX/UI Enhancement)
 
-*   Upload `.gcode` and `.stl` files.
-*   Calculate print cost based on material usage and optional energy consumption.
-*   Select from a list of common filament types.
-*   Enter a custom filament cost.
-*   Secure and containerized with Docker.
+*   **Modern UI:** A responsive, card-based layout built with Material-UI.
+*   **Drag-and-Drop Upload:** An intuitive drag-and-drop area for file uploads.
+*   **Cost Visualization:** A pie chart to visualize the cost breakdown.
+*   **Business Branding:** Admins can upload their own logo to be displayed on the site and on invoices.
+*   **Professional Invoices:** Redesigned PDF invoices with a professional layout.
