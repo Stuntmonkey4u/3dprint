@@ -28,16 +28,13 @@ label {
 
 input[type="file"],
 input[type="number"],
+input[type="text"],
+textarea,
 select {
     width: 100%;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-}
-
-.file-notice {
-    font-size: 0.8em;
-    color: #666;
 }
 
 button {

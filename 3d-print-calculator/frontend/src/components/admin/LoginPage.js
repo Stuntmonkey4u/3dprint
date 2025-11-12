@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Container, Card, CardContent, Typography, TextField, Button } from '@mui/material';
 
 function LoginPage() {
     const [username, setUsername] = useState('');
@@ -29,21 +30,19 @@ function LoginPage() {
     };
 
     return (
-        <div>
-            <h2>Admin Login</h2>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>Username</label>
-                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
-                </div>
-                <div>
-                    <label>Password</label>
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-                </div>
-                <button type="submit">Login</button>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-            </form>
-        </div>
+        <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+            <Card sx={{ maxWidth: 400 }}>
+                <CardContent>
+                    <Typography variant="h5" component="h1" textAlign="center" gutterBottom>Admin Login</Typography>
+                    <form onSubmit={handleSubmit}>
+                        <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth margin="normal" />
+                        <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth margin="normal" />
+                        <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Login</Button>
+                        {error && <Typography color="error" sx={{ mt: 2 }}>{error}</Typography>}
+                    </form>
+                </CardContent>
+            </Card>
+        </Container>
     );
 }
 

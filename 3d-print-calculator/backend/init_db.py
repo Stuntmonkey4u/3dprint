@@ -37,4 +37,5 @@ def create_and_seed_database():
             print("Database already seeded.")
 
 if __name__ == '__main__':
+    print("Forcing database re-initialization.")
     create_and_seed_database()
