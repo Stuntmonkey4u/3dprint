@@ -1,5 +1,5 @@
 # Stage 1: Build React frontend
-FROM node:16-alpine as build-react
+FROM node:20-alpine as build-react
 WORKDIR /app/frontend
 
 COPY 3d-print-calculator/frontend/package.json ./
@@ -27,9 +27,9 @@ COPY 3d-print-calculator/backend/ ./backend/
 # Copy built React app
 COPY --from=build-react /app/frontend/build ./backend/static
 
-RUN mkdir -p /data/logos && chown -R app:app /data
+RUN mkdir -p /data/logos
 COPY 3d-print-calculator/backend/init_db.py ./backend/
-RUN python backend/init_db.py
+RUN python backend/init_db.py && chown -R app:app /data
 
 # Switch to non-root user
 USER app

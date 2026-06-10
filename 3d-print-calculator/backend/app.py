@@ -14,7 +14,16 @@ from reportlab.lib.units import inch
 import io
 
 app = Flask(__name__, static_folder='static', static_url_path='')
-Talisman(app, force_https=False)
+csp = {
+    'default-src': [
+        '\'self\'',
+        '\'unsafe-inline\'',
+        '\'unsafe-eval\'',
+        'data:',
+        'blob:'
+    ]
+}
+Talisman(app, force_https=False, content_security_policy=csp)
 
 # Configuration
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB

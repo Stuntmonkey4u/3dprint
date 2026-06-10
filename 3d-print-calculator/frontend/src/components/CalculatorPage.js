@@ -78,13 +78,24 @@ function CalculatorPage() {
         }
     };
 
-    const pieData = result ? {
-        labels: ['Material', 'Energy', 'Labor', 'Maintenance', 'Markup'],
-        datasets: [{
-            data: [result.material_cost, result.energy_cost, result.labor_cost, result.maintenance_cost, result.markup].filter(v => v > 0),
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
-        }],
-    } : {};
+    const pieData = (() => {
+        if (!result) return {};
+        const categories = [
+            { label: 'Material', value: result.material_cost, color: '#FF6384' },
+            { label: 'Energy', value: result.energy_cost, color: '#36A2EB' },
+            { label: 'Labor', value: result.labor_cost, color: '#FFCE56' },
+            { label: 'Maintenance', value: result.maintenance_cost, color: '#4BC0C0' },
+            { label: 'Markup', value: result.markup, color: '#9966FF' }
+        ].filter(c => c.value > 0);
+
+        return {
+            labels: categories.map(c => c.label),
+            datasets: [{
+                data: categories.map(c => c.value),
+                backgroundColor: categories.map(c => c.color),
+            }],
+        };
+    })();
 
     const handleDownloadInvoice = async () => {
         if (!result) return;
@@ -112,6 +123,9 @@ function CalculatorPage() {
 
     return (
         <Container sx={{ py: 4 }}>
+            <Box textAlign="center" mb={2}>
+                <img src="/api/logo" alt="Business Logo" style={{ maxHeight: '100px', maxWidth: '100%' }} onError={(e) => e.target.style.display = 'none'} />
+            </Box>
             <Typography variant="h3" component="h1" textAlign="center" gutterBottom>3D Print Cost Calculator</Typography>
             <Grid container spacing={4}>
                 <Grid item xs={12} md={6}>
